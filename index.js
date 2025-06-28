@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
-const { chromium } = require("playwright");
+const playwright = require("playwright-core");
+const chromium = require("playwright-aws-lambda");
 
 const app = express();
 app.use(cors());
@@ -14,7 +15,12 @@ app.post("/scrape", async (req, res) => {
   }
 
   try {
-    const browser = await chromium.launch({ headless: true });
+    const browser = await playwright.chromium.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath,
+      headless: chromium.headless,
+    });
+
     const page = await browser.newPage();
 
     await page.goto(
