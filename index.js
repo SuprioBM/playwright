@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const playwright = require("playwright-core");
-const chromium = require("chrome-aws-lambda");
+const playwright = require("playwright");
 
 const app = express();
 app.use(cors());
@@ -15,12 +14,9 @@ app.post("/scrape", async (req, res) => {
   }
 
   try {
-    const executablePath = (await chromium.executablePath) || null;
-    console.log("Executable path:", executablePath);
+    // Launch browser - no need for executablePath or args, image already includes everything
     const browser = await playwright.chromium.launch({
-      args: chromium.args,
-      executablePath: executablePath || undefined, // allow fallback to default
-      headless: chromium.headless,
+      headless: true,
       ignoreHTTPSErrors: true,
     });
 
