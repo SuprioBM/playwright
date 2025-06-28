@@ -15,15 +15,16 @@ app.post("/scrape", async (req, res) => {
 
   try {
     const browser = await playwright.chromium.launch({ headless: true });
-    const page = await browser.newPage();
 
-    // Spoof user agent and viewport size
-    await page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-        "AppleWebKit/537.36 (KHTML, like Gecko) " +
-        "Chrome/120.0.0.0 Safari/537.36"
-    );
-    await page.setViewportSize({ width: 1280, height: 800 });
+    const context = await browser.newContext({
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      viewport: { width: 1280, height: 800 },
+    });
+
+    const page = await context.newPage();
+
+  
 
     const url = `https://www.fiverr.com/search/gigs?query=${encodeURIComponent(
       query
