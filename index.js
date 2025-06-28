@@ -14,12 +14,7 @@ app.post("/scrape", async (req, res) => {
   }
 
   try {
-    // Launch browser - no need for executablePath or args, image already includes everything
-    const browser = await playwright.chromium.launch({
-      headless: true,
-      ignoreHTTPSErrors: true,
-    });
-
+    const browser = await playwright.chromium.launch({ headless: true });
     const page = await browser.newPage();
 
     await page.goto(
