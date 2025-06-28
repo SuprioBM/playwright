@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const playwright = require("playwright-core");
-const chromium = require("playwright-aws-lambda");
+const chromium = require("chrome-aws-lambda");
 
 const app = express();
 app.use(cors());
@@ -15,7 +15,7 @@ app.post("/scrape", async (req, res) => {
   }
 
   try {
-    const browser = await playwright.chromium.launch({
+    const browser = await chromium.launch({
       args: chromium.args,
       executablePath: await chromium.executablePath,
       headless: chromium.headless,
@@ -28,7 +28,7 @@ app.post("/scrape", async (req, res) => {
       { waitUntil: "networkidle" }
     );
 
-    await page.waitForSelector(".gig-card-layout", { timeout: 10000 });
+    await page.waitForSelector(".gig-card-layout", { timeout: 15000 });
 
     const gigs = await page.$$eval(".gig-card-layout", (nodes) =>
       nodes.map((node) => {
