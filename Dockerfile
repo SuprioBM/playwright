@@ -1,14 +1,13 @@
-# Use official Playwright image with Chromium already installed
-FROM mcr.microsoft.com/playwright:v1.53.1-focal
+# Use the official Playwright image with browsers pre-installed
+FROM mcr.microsoft.com/playwright:focal
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files and install deps
+# Copy dependency files and install
 COPY package.json package-lock.json ./
 RUN npm install
 
-# Copy your source code
+# Copy the rest of your scraper code
 COPY . .
 
 # Run your server
