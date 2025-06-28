@@ -14,7 +14,7 @@ app.post("/scrape", async (req, res) => {
   }
 
   try {
-    const browser = await playwright.chromium.launch({ headless: true });
+    const browser = await playwright.chromium.launch({ headless: false });
     const page = await browser.newPage();
 
     await page.goto(
@@ -22,7 +22,7 @@ app.post("/scrape", async (req, res) => {
       { waitUntil: "networkidle", timeout: 30000 }
     );
 
-    await page.waitForSelector(".gig-card-layout", { timeout: 15000 });
+    await page.waitForSelector(".gig-card-layout", { timeout: 30000 });
 
     const gigs = await page.$$eval(".gig-card-layout", (nodes) =>
       nodes.map((node) => {
