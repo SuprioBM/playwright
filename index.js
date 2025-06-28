@@ -14,7 +14,7 @@ app.post("/scrape", async (req, res) => {
   }
 
   try {
-    const browser = await playwright.chromium.launch({ headless: false });
+    const browser = await playwright.chromium.launch({ headless: true });
     const page = await browser.newPage();
 
     await page.goto(
