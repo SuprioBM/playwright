@@ -16,7 +16,7 @@ app.post("/scrape", async (req, res) => {
 
   try {
     const executablePath = (await chromium.executablePath) || null;
-
+    console.log("Executable path:", executablePath);
     const browser = await playwright.chromium.launch({
       args: chromium.args,
       executablePath: executablePath || undefined, // allow fallback to default
