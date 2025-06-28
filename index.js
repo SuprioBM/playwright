@@ -15,17 +15,18 @@ app.post("/scrape", async (req, res) => {
   }
 
   try {
-    const browser = await chromium.launch({
+    const browser = await playwright.chromium.launch({
       args: chromium.args,
       executablePath: await chromium.executablePath,
       headless: chromium.headless,
+      ignoreHTTPSErrors: true,
     });
 
     const page = await browser.newPage();
 
     await page.goto(
       `https://www.fiverr.com/search/gigs?query=${encodeURIComponent(query)}`,
-      { waitUntil: "networkidle" }
+      { waitUntil: "networkidle", timeout: 30000 }
     );
 
     await page.waitForSelector(".gig-card-layout", { timeout: 15000 });
