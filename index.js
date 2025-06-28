@@ -15,9 +15,10 @@ app.post("/scrape", async (req, res) => {
   }
 
   try {
+    const executablePath = await chromium.executablePath;
     const browser = await playwright.chromium.launch({
       args: chromium.args,
-      executablePath: await chromium.executablePath,
+      executablePath,
       headless: chromium.headless,
       ignoreHTTPSErrors: true,
     });
