@@ -7,19 +7,22 @@ app.use(cors());
 app.use(express.json());
 
 app.post("/scrape", async (req, res) => {
-  const { query } = req.body;
+  const { query = "" } = req.body;
 
-  if (!query) return res.status(400).json({ error: "Missing query" });
+  if (!query.trim()) {
+    return res.status(400).json({ error: "Missing query" });
+  }
 
   try {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
+
     await page.goto(
       `https://www.fiverr.com/search/gigs?query=${encodeURIComponent(query)}`,
       { waitUntil: "networkidle" }
     );
 
-    await page.waitForSelector(".gig-card-layout");
+    await page.waitForSelector(".gig-card-layout", { timeout: 10000 });
 
     const gigs = await page.$$eval(".gig-card-layout", (nodes) =>
       nodes.map((node) => {
@@ -42,10 +45,10 @@ app.post("/scrape", async (req, res) => {
     await browser.close();
     res.json({ gigs });
   } catch (err) {
-    console.error(err);
+    console.error("Scraping error:", err);
     res.status(500).json({ error: "Scraping failed" });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Scraper listening on port ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Scraper listening on port ${PORT}`));
