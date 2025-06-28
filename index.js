@@ -15,16 +15,12 @@ app.post("/scrape", async (req, res) => {
 
   try {
     const browser = await playwright.chromium.launch({ headless: true });
-
     const context = await browser.newContext({
       userAgent:
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       viewport: { width: 1280, height: 800 },
     });
-
     const page = await context.newPage();
-
-  
 
     const url = `https://www.fiverr.com/search/gigs?query=${encodeURIComponent(
       query
@@ -32,45 +28,45 @@ app.post("/scrape", async (req, res) => {
 
     await page.goto(url, { waitUntil: "networkidle", timeout: 60000 });
 
-    // Debug screenshot (optional, remove in production)
-    await page.screenshot({ path: "debug.png", fullPage: true });
+    // Optional: screenshot for debugging
+    // await page.screenshot({ path: "debug.png", fullPage: true });
 
-    // Wait for updated gig cards selector
-    await page.waitForSelector(
-      'div[data-test="gig-card"], a[data-test="gig-card-tiles"]',
-      { timeout: 30000 }
-    );
+    // Use the main selector for gig cards only
+    await page.waitForSelector('div[data-test="gig-card"]', { timeout: 30000 });
 
-    // Extract gigs with updated selectors
-    const gigs = await page.$$eval(
-      'div[data-test="gig-card"], a[data-test="gig-card-tiles"]',
-      (nodes) =>
-        nodes.map((node) => {
-          const title = node.querySelector("h3")?.textContent?.trim() || "";
-          const price =
-            node
-              .querySelector("[data-test='gig-price']")
-              ?.textContent?.trim() || "";
-          const seller =
-            node
-              .querySelector("[data-test='seller-name']")
-              ?.textContent?.trim() || "";
-          const url = node.querySelector("a")?.getAttribute("href") || "";
+    const gigs = await page.$$eval('div[data-test="gig-card"]', (nodes) =>
+      nodes.map((node) => {
+        const title = node.querySelector("h3")?.textContent?.trim() || "";
+        const price =
+          node.querySelector("[data-test='gig-price']")?.textContent?.trim() ||
+          "";
+        const seller =
+          node
+            .querySelector("[data-test='seller-name']")
+            ?.textContent?.trim() || "";
 
-          return {
-            title,
-            price,
-            seller,
-            url: url ? "https://www.fiverr.com" + url : "",
-          };
-        })
+        // The gig card itself might have an anchor link
+        // Try to find the direct <a> tag with the href
+        let url = "";
+        const anchor = node.querySelector("a[href]");
+        if (anchor) {
+          url = anchor.getAttribute("href") || "";
+        }
+
+        return {
+          title,
+          price,
+          seller,
+          url: url ? "https://www.fiverr.com" + url : "",
+        };
+      })
     );
 
     await browser.close();
     res.json({ gigs });
   } catch (err) {
     console.error("Scraping error:", err);
-    res.status(500).json({ error: "Scraping failed" });
+    res.status(500).json({ error: "Scraping failed", details: err.message });
   }
 });
 
