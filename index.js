@@ -1,10 +1,14 @@
 const express = require("express");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 const playwright = require("playwright");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const SCREENSHOT_PATH = "/app/debug.png"; // absolute path inside Render container
 
 app.post("/scrape", async (req, res) => {
   const { query = "" } = req.body;
@@ -28,10 +32,9 @@ app.post("/scrape", async (req, res) => {
 
     await page.goto(url, { waitUntil: "networkidle", timeout: 60000 });
 
-    // Optional: screenshot for debugging
-    // await page.screenshot({ path: "debug.png", fullPage: true });
+    // Take screenshot for debugging
+    await page.screenshot({ path: SCREENSHOT_PATH, fullPage: true });
 
-    // Use the main selector for gig cards only
     await page.waitForSelector('div[data-test="gig-card"]', { timeout: 30000 });
 
     const gigs = await page.$$eval('div[data-test="gig-card"]', (nodes) =>
@@ -44,14 +47,8 @@ app.post("/scrape", async (req, res) => {
           node
             .querySelector("[data-test='seller-name']")
             ?.textContent?.trim() || "";
-
-        // The gig card itself might have an anchor link
-        // Try to find the direct <a> tag with the href
-        let url = "";
         const anchor = node.querySelector("a[href]");
-        if (anchor) {
-          url = anchor.getAttribute("href") || "";
-        }
+        const url = anchor?.getAttribute("href") || "";
 
         return {
           title,
@@ -67,6 +64,15 @@ app.post("/scrape", async (req, res) => {
   } catch (err) {
     console.error("Scraping error:", err);
     res.status(500).json({ error: "Scraping failed", details: err.message });
+  }
+});
+
+// 🖼 Serve the screenshot for debugging
+app.get("/screenshot", (req, res) => {
+  if (fs.existsSync(SCREENSHOT_PATH)) {
+    res.sendFile(SCREENSHOT_PATH);
+  } else {
+    res.status(404).send("Screenshot not found.");
   }
 });
 
