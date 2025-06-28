@@ -17,29 +17,52 @@ app.post("/scrape", async (req, res) => {
     const browser = await playwright.chromium.launch({ headless: true });
     const page = await browser.newPage();
 
-    await page.goto(
-      `https://www.fiverr.com/search/gigs?query=${encodeURIComponent(query)}`,
-      { waitUntil: "networkidle", timeout: 30000 }
+    // Spoof user agent and viewport size
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+        "AppleWebKit/537.36 (KHTML, like Gecko) " +
+        "Chrome/120.0.0.0 Safari/537.36"
+    );
+    await page.setViewportSize({ width: 1280, height: 800 });
+
+    const url = `https://www.fiverr.com/search/gigs?query=${encodeURIComponent(
+      query
+    )}`;
+
+    await page.goto(url, { waitUntil: "networkidle", timeout: 60000 });
+
+    // Debug screenshot (optional, remove in production)
+    await page.screenshot({ path: "debug.png", fullPage: true });
+
+    // Wait for updated gig cards selector
+    await page.waitForSelector(
+      'div[data-test="gig-card"], a[data-test="gig-card-tiles"]',
+      { timeout: 30000 }
     );
 
-    await page.waitForSelector(".gig-card-layout", { timeout: 30000 });
+    // Extract gigs with updated selectors
+    const gigs = await page.$$eval(
+      'div[data-test="gig-card"], a[data-test="gig-card-tiles"]',
+      (nodes) =>
+        nodes.map((node) => {
+          const title = node.querySelector("h3")?.textContent?.trim() || "";
+          const price =
+            node
+              .querySelector("[data-test='gig-price']")
+              ?.textContent?.trim() || "";
+          const seller =
+            node
+              .querySelector("[data-test='seller-name']")
+              ?.textContent?.trim() || "";
+          const url = node.querySelector("a")?.getAttribute("href") || "";
 
-    const gigs = await page.$$eval(".gig-card-layout", (nodes) =>
-      nodes.map((node) => {
-        const title = node.querySelector("h3")?.textContent?.trim() || "";
-        const price =
-          node.querySelector(".gig-price")?.textContent?.trim() || "";
-        const seller =
-          node.querySelector(".seller-name")?.textContent?.trim() || "";
-        const url = node.querySelector("a")?.getAttribute("href") || "";
-
-        return {
-          title,
-          price,
-          seller,
-          url: url ? "https://www.fiverr.com" + url : "",
-        };
-      })
+          return {
+            title,
+            price,
+            seller,
+            url: url ? "https://www.fiverr.com" + url : "",
+          };
+        })
     );
 
     await browser.close();
